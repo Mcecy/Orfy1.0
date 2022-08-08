@@ -1,10 +1,13 @@
-import ctypes, sys
+# pylint: disable=C0103,C0114,C0115,C0116
+import ctypes
+import sys
 
-def isAdmin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
+class Admin:
+    def isAdmin(self):
+        if ctypes.windll.shell32.IsUserAnAdmin():
+            return True
+        else:
+            return False
 
-def runAsAdmin():
-    return ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    def runAsAdmin(self):
+        return ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
