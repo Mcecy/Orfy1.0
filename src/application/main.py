@@ -1,5 +1,0 @@
-"""
-Dosctring
-"""
-
-print('Hello World"')
