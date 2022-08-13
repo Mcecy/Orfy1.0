@@ -1,8 +1,10 @@
 # pylint: disable=C0103,C0114,C0115,C0116
 import os
-import tkinter as tk
 from tkinter import filedialog
-from src.entities.permissions.admin import Admin
+import pandas as pd
+import mariadb
+import sys
+from entities.admin import Admin
 
 admin = Admin()
 
@@ -14,11 +16,35 @@ if admin.isAdmin():
     if not exists:
         os.makedirs(folder)
 
-    root = tk.Tk()
-    root.withdraw()
+    file_name = filedialog.askopenfilenames()
 
-    path_file = filedialog.askopenfilenames()
+    print(file_name)
 
-    print(path_file)
+    if file_name.endswith('.csv'):
+        # Connect to MariaDB Platform
+        try:
+            conn = mariadb.connect(
+                user="root@localhost",
+                password="1234",
+                port=3306,
+                database="aror"
+
+            )
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+            sys.exit(1)
+
+        # Get Cursor
+        cur = conn.cursor()
+
+        df = pd.read_csv(file_name)
+
+        cur.execute(
+            "INSERT INTO aror;",
+            (df,))
+
+    else:
+        print('Arquivo não suportado.')
+
 else:
     admin.runAsAdmin()
