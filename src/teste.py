@@ -16,7 +16,7 @@ datasets = []
 for i in range(1, periodos+1):
     mes = input(f"Qual o mês do período {i}? ")
     ano = input(f"Qual o ano do período {i}? ")
-    periodo = f"{mes}/{ano}.csv"
+    periodo = f"{mes}-{ano}.csv"
     pasta = "./entities/datasets"
     for diretorio, subpastas, arquivos in os.walk(pasta):
         for arquivo in arquivos:
@@ -24,6 +24,9 @@ for i in range(1, periodos+1):
             if arquivo.endswith(periodo):
                 datasets = datasets.append(arquivo)
 print(datasets)
+datasets_venda = []
+mes_ano = "/".join(mes_ano)
+datasets_venda = datasets_venda.append(mes_ano)
 
 counter = 0
 while counter < len(datasets):
@@ -96,7 +99,7 @@ while counter < len(datasets):
                     if order == tipo_filtro:
                         order_by = order
 
-
+                df_filtros = pd.Dataframe((zip(tipos_filtro, conteudos_filtro)), columns=['TIPO', 'CONTEUDO'])
 
                 #Fim do bloco para colunas filtradas
 
@@ -112,3 +115,38 @@ while counter < len(datasets):
                 # Fim do bloco para configurar consultas
 
             """
+"""
+
+"""
+import os
+from sqlalchemy import create_engine
+import pandas as pd
+import mariadb
+
+def connection():
+    conn = mariadb.connect(user='root', password=1234, port=3306, database='aror')
+    return conn
+
+# Iniciando cursor para manipulação do banco
+connect = connection()
+cursor = connect.cursor()
+
+# Seleção dos datasets de venda para mesclar no file_venda
+periodos = (int(input("Quantos períodos gostaria de incluir na consulta? ")))
+datasets = []
+for i in range(1, periodos+1):
+    mes = input(f"Qual o mês do período {i}? ")
+    ano = input(f"Qual o ano do período {i}? ")
+    periodo = f"{mes}-{ano}.csv"
+    pasta = "src/entities/datasets"
+    for diretorio, subpastas, arquivos in os.walk(pasta):
+        for arquivo in arquivos:
+            if arquivo.endswith(periodo):
+                #arquivo = 'src/entities/dataset/' + arquivo
+                datasets.append(arquivo)
+#map(pd.read_csv, datasets)
+df_dataset = pd.concat(map(pd.read_csv, datasets), ignore_index=True, axis= {'NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'})
+
+# Conectando com o banco de dados para enviar dataframe
+engine = create_engine(f"mysql+pymysql://{'root'}:{1234}@localhost/{'aror'}")
+df_dataset.to_sql('dataset_vendas', con = engine, if_exists = 'append')
