@@ -1,4 +1,4 @@
-# OrFy - em alpha
+# OrFy - em produção
 ## Sobre
 Uma ferramenta de pesquisa em terminal para fazer uma análise quantitativa do impacto de eventos nacionais e internacionais no consumo de medicamentos controlados e antimicrobianos no Brasil. Feito em Python, ainda em alpha.
 
