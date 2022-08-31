@@ -5,6 +5,7 @@ import pwinput as pw
 from sqlalchemy import create_engine
 import pandas as pd
 import mariadb
+from retrying import retry
 class App:
 
     print("Boas-vindas a OrFy!")
@@ -49,7 +50,6 @@ class App:
         table_quest = input("Gostaria de criar novas tabelas?(s/n)")
 
         if table_quest.lower() == 's':
-            # Perguntar se quer fazer a tabela de cada
             table_medicamento_nome = input("Que nome quer dar à tabela de medicamentos? ")
 
             table_venda_nome = input("Que nome quer dar à tabela de vendas? ")
@@ -60,28 +60,36 @@ class App:
 
             table_resultado_nome = input("Que nome quer dar à tabela de resultados? ")
 
-            # Queries para criar tabelas no banco se não existirem AJEITAR QUERIES
-            create_query1 = f"CREATE TABLE IF NOT EXISTS {table_medicamento_nome} (ID_MEDICAMENTO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, PRINCIPIO_ATIVO VARCHAR(380), CLASSE_TERAPEUTICA VARCHAR(101), NOME_PRODUTO VARCHAR(70));"
-            create_query2 = f"CREATE TABLE IF NOT EXISTS {table_venda_nome} (ID_VENDA INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, QTD_VENDIDA INT UNSIGNED, MES_VENDA VARCHAR(2), ANO_VENDA VARCHAR(4), ID_MEDICAMENTO INT UNSIGNED, FOREIGN KEY(IDMEDICAMENTO) REFERENCES MEDICAMENTO(ID_MEDICAMENTO));"
-            create_query3 = f"CREATE TABLE IF NOT EXISTS {table_consulta_nome} (ID_CONSULTA INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, RESULTADO INT UNSIGNED, ID_FILTRO INT UNSIGNED, ID_PERIODO INT UNSIGNED, FOREIGN KEY(ID_FILTRO) REFERENCES {table_filtro_nome}(ID_FILTRO), FOREIGN KEY(ID_PERIODO) REFERENCES {table_periodo_nome}(ID_PERIODO));"
-            create_query4 = f"CREATE TABLE IF NOT EXISTS {table_filtro_nome} (ID_FILTRO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, TIPO VARCHAR(18), CONTEUDO VARCHAR(380));"
-            create_query5 = f"CREATE TABLE IF NOT EXISTS {table_resultado_nome} (ID_PERIODO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, MES VARCHAR(2), ANO VARCHAR(4));"
+            table_dataset_nome = input("Que nome quer dar à tabela de dataset? ")
+
+            # Queries para criar tabelas no banco se não existirem
+            create_query1 = f"CREATE TABLE IF NOT EXISTS {table_medicamento_nome}(IDMEDICAMENTO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,PRINCIPIOATIVO VARCHAR(380) NOT NULL,CLASSETERAPEUTICA VARCHAR(101) NOT NULL,NOMEPRODUTO VARCHAR(50) NOT NULL);"
+            create_query2 = f"CREATE TABLE IF NOT EXISTS {table_filtro_nome}(IDFILTRO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,TIPO ENUM('CLASSETERAPEUTICA', 'PRINCIPIOATIVO', 'NOMEPRODUTO') NOT NULL,CONTEUDO VARCHAR(380));"
+            create_query3 = f"CREATE TABLE IF NOT EXISTS {table_dataset_nome}(IDDATASET INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,NOMEDATASET VARCHAR(7) UNIQUE NOT NULL,ANODATASET CHAR(4) NOT NULL,MESDATASET CHAR(2) NOT NULL);"
+            create_query4 = f"CREATE TABLE IF NOT EXISTS {table_venda_nome}(IDVENDA INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,QTDVENDIDA INT NOT NULL,ANOVENDA CHAR(4) NOT NULL,MESVENDA CHAR(2) NOT NULL, PRINCIPIOATIVO VARCHAR(380) NOT NULL, ID_DATASET INT UNSIGNED NOT NULL,ID_MEDICAMENTO INT UNSIGNED UNIQUE);"
+            create_query5 = f"CREATE TABLE IF NOT EXISTS {table_resultado_nome}(IDRESULTADO INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,SOMA INT UNSIGNED NOT NULL,ID_FILTRO INT UNSIGNED NOT NULL,ID_VENDA INT UNSIGNED NOT NULL);"
+            create_query6 = f"CREATE TABLE IF NOT EXISTS {table_consulta_nome}(IDCONSULTA INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,ID_DATASET INT UNSIGNED NOT NULL,ID_RESULTADO INT UNSIGNED NOT NULL);"
+            create_query7 = "CREATE TABLE IF NOT EXISTS ACESSA(ID_VENDA INT UNSIGNED NOT NULL,ID_RESULTADO INT UNSIGNED NOT NULL,PRIMARY KEY(ID_VENDA, ID_RESULTADO));"
 
             cursor.execute(create_query1)
             cursor.execute(create_query2)
             cursor.execute(create_query3)
             cursor.execute(create_query4)
             cursor.execute(create_query5)
+            cursor.execute(create_query6)
+            cursor.execute(create_query7)
         else:
             table_medicamento_nome = input("Qual o nome da tabela de medicamentos? ")
 
-            table_venda_nome = input("Qual o nome da tabela de vendas? ")
+            table_venda_nome = input("Qual o nome da tabela de filtros? ")
 
-            table_consulta_nome = input("Qual o nome da tabela de consultas? ")
+            table_consulta_nome = input("Qual o nome da tabela de datasets? ")
 
-            table_filtro_nome = input("Qual o nome da tabela de filtros? ")
+            table_filtro_nome = input("Qual o nome da tabela de vendas? ")
 
             table_resultado_nome = input("Qual o nome da tabela de resultados? ")
+
+            table_resultado_nome = input("Qual o nome da tabela de consultas? ")
 
             try:
                 # Criando o dataframe de medicamentos e mandando para o banco
@@ -92,6 +100,7 @@ class App:
                 df_medicamento.to_sql(table_medicamento_nome, con = engine, if_exists = 'replace')
             except pd.error() as e:
                 print(f'Erro: {e}')
+                sys.exit(1)
 
             # Instanciando as tabelas criadas em variáveis - COLOCAR NOMES DAS COLUNAS
             table_consulta_query = f"SELECT * FROM {table_consulta_nome};"
@@ -145,6 +154,7 @@ class App:
 
         except pd.error() as e:
             print(f'Erro: {e}')
+            sys.exit(1)
 
         consulta_quest = input("Gostaria de iniciar uma nova consulta?(s/n)")
 
@@ -202,10 +212,11 @@ class App:
             filtros_extra = " OR ".join(filtros_extra)   # Mostra o texto dos filtros selecionados
 
             tipos_filtro = []
+            conteudos_filtro = []
             for filtro in view_filtro_list:
                 tipo_filtro, conteudo_filtro = filtro.split(",")
-                tipos_filtro = tipos_filtro.append(tipo_filtro) # Mostra a lista de tipos de filtros preenchida com a lista criada no loop de filtro
-                conteudos_filtro = conteudo_filtro.append(conteudo_filtro) # Mostra a lista de conteudos de filtros preenchida com a lista criada no loop de filtro
+                tipos_filtro.append(tipo_filtro) # Mostra a lista de tipos de filtros preenchida com a lista criada no loop de filtro
+                conteudos_filtro.append(conteudo_filtro) # Mostra a lista de conteudos de filtros preenchida com a lista criada no loop de filtro
 
             df_filtro = pd.Dataframe((zip(tipos_filtro, conteudos_filtro)), columns=['TIPO', 'CONTEUDO'])
             # Enviando o dataframe de filtros para a tabela pertinente
@@ -244,7 +255,7 @@ class App:
 
             table_consulta_nome = input("Qual o nome da tabela de consulta? ")
 
-            table_consulta_query = f"SELECT IDCONSULTA, MES, ANO, QTD FROM {table_consulta_nome};"
+            table_consulta_query = f"SELECT C.IDCONSULTA, R.MES, R.ANO, R.SOMA, F.TIPOFILTRO, F.CONTEUDOFILTRO, D.NOMEDATASET FROM {table_consulta_nome} C INNER JOIN ({table_resultado_nome} R, {table_dataset_nome} D, {table_venda_nome} V, {table_filtro_nome} F) ON (C.IDCONSULTA = R.ID_CONSULTA AND V.ID_DATASET = D.IDDATASET AND C.IDCONSULTA = F.ID_CONSULTA) ORDER BY {order_by};"
             cursor.execute(table_consulta_query)
 
             table_consulta = []

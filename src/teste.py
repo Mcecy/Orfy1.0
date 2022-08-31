@@ -1,15 +1,5 @@
 # pylint: disable=C0103,C0114,C0115,C0116, C0209, C0301, W0105
 """
-            # Começo do bloco de instanciar tabelas do banco de dados
-            table_consulta_query = f"SELECT * FROM {table_consulta_nome}"
-            table_medicamento_query = f"SELECT * FROM {table_medicamento_nome}"
-            table_filtro_query = f"SELECT * FROM {table_filtro_nome}"
-            table_periodo_query = f"SELECT * FROM {table_periodo_nome}"
-            # Fim do bloco de instanciar tabelas do banco de dados
-
-            table_venda_query = Acesso em loop para escolher a table_venda[i] através do período selecionado
-            para mesclar num só dataset e resultar nessa variável
-
 #Começo do bloco para seleção de datasets para table_venda_query
 periodos = (int(input("Quantos períodos gostaria de incluir na consulta? ")))
 datasets = []
@@ -116,8 +106,6 @@ while counter < len(datasets):
 
             """
 """
-
-"""
 import os
 from sqlalchemy import create_engine
 import pandas as pd
@@ -150,3 +138,8 @@ df_dataset = pd.concat(map(pd.read_csv, datasets), ignore_index=True, axis= {'NO
 # Conectando com o banco de dados para enviar dataframe
 engine = create_engine(f"mysql+pymysql://{'root'}:{1234}@localhost/{'aror'}")
 df_dataset.to_sql('dataset_vendas', con = engine, if_exists = 'append')
+"""
+med_file = 'src\\entities\\datasets\\DADOS_ABERTOS_MEDICAMENTOS.csv'
+
+if med_file.endswith('.csv'):
+    print('Funcionou.')
