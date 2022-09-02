@@ -1,10 +1,11 @@
-# pylint: disable=C0103,C0114,C0115,C0116, C0209, C0301, W0105
 import os
 import sys
 import pwinput as pw
 from sqlalchemy import create_engine
 import pandas as pd
 import mariadb
+import filtros
+
 
 class App:
 
@@ -31,7 +32,7 @@ class App:
             if table_quest.lower() == 's':
                 # Conexão com o banco de dados no mariadb
                 user = input("Digite seu usuário: ")
-                pw = pw.pwinput(prompt = 'Digite sua senha: ')
+                pw = pw.pwinput(prompt='Digite sua senha: ')
 
                 port_quest = input("Gostaria de usar port padrão?(s/n) ")
 
@@ -41,7 +42,6 @@ class App:
                     port = (int(input("Digite o port de sua escolha: ")))
 
                 db = input("Digite o nome da sua database: ")
-
 
                 conn = mariadb.connect(user=user, password=pw, port=port, database=db)
 
@@ -65,13 +65,12 @@ class App:
                 cursor.execute(create_query4)
                 cursor.execute(create_query5)
 
-
                 # Criando o dataframe de medicamentos e mandando para o banco
-                df_medicamento = pd.read_csv(med_file, delimiter = ";", header = 0, names = ['1', 'NOMEPRODUTO', '2', '3', "NUMEROREGISTRO", "5", "6", "CLASSETERAPEUTICA", "7", '8', 'PRINCIPIOATIVO'], usecols = ['NUMEROREGISTRO', 'NOMEPRODUTO', 'CLASSETERAPEUTICA', 'PRINCIPIOATIVO'], quotechar = "'\"", quoting = 3, encoding = 'utf-8', encoding_errors = 'ignore')
+                df_medicamento = pd.read_csv(med_file, delimiter=";", header=0, names=['1', 'NOMEPRODUTO', '2', '3', "NUMEROREGISTRO", "5", "6", "CLASSETERAPEUTICA", "7", '8', 'PRINCIPIOATIVO'], usecols=['NUMEROREGISTRO', 'NOMEPRODUTO', 'CLASSETERAPEUTICA', 'PRINCIPIOATIVO'], quotechar="'\"", quoting=3, encoding='utf-8', encoding_errors='ignore')
 
                 engine = create_engine(f"mysql+pymysql://{user}:{pw}@localhost/{db}")
 
-                df_medicamento.to_sql('medicamento', con = engine, if_exists = 'replace')
+                df_medicamento.to_sql('medicamento', con=engine, if_exists='replace')
 
             elif table_quest.lower() == 'n':
                 restart = True
@@ -83,7 +82,7 @@ class App:
                     if consulta_quest == "s":
                         # Conexão com o banco de dados no mariadb
                         user = input("Digite seu usuário: ")
-                        pw = pw.pwinput(prompt = 'Digite sua senha: ')
+                        pw = pw.pwinput(prompt='Digite sua senha: ')
 
                         port_quest = input("Gostaria de usar port padrão?(s/n) ")
 
@@ -93,7 +92,6 @@ class App:
                             port = (int(input("Digite o port de sua escolha: ")))
 
                         db = input("Digite o nome da sua database: ")
-
 
                         conn = mariadb.connect(user=user, password=pw, port=port, database=db)
 
@@ -106,11 +104,11 @@ class App:
 
                         try:
                             # Criando o dataframe de medicamentos e mandando para o banco
-                            df_medicamento = pd.read_csv(med_file, delimiter = ";", header = 0, names = ['1', 'NOMEPRODUTO', '2', '3', "NUMEROREGISTRO", "5", "6", "CLASSETERAPEUTICA", "7", '8', 'PRINCIPIOATIVO'], usecols = ['NUMEROREGISTRO', 'NOMEPRODUTO', 'CLASSETERAPEUTICA', 'PRINCIPIOATIVO'], quotechar = "'\"", quoting = 3, encoding = 'utf-8', encoding_errors = 'ignore')
+                            df_medicamento = pd.read_csv(med_file, delimiter=";", header=0, names=['1', 'NOMEPRODUTO', '2', '3', "NUMEROREGISTRO", "5", "6", "CLASSETERAPEUTICA", "7", '8', 'PRINCIPIOATIVO'], usecols=['NUMEROREGISTRO', 'NOMEPRODUTO', 'CLASSETERAPEUTICA', 'PRINCIPIOATIVO'], quotechar="'\"", quoting=3, encoding='utf-8', encoding_errors='ignore')
 
                             engine = create_engine(f"mysql+pymysql://{user}:{pw}@localhost/{db}")
 
-                            df_medicamento.to_sql('medicamento', con = engine, if_exists = 'replace')
+                            df_medicamento.to_sql('medicamento', con=engine, if_exists='replace')
                         except pd.error() as e:
                             print(f'Erro: {e}')
                             sys.exit(1)
@@ -132,7 +130,7 @@ class App:
                         table_consulta = []
                         table_filtro = []
                         table_venda = []
-                        table_dataset= []
+                        table_dataset = []
 
                         for (IDMEDICAMENTO, NOMEPRODUTO, CLASSETERAPEUTICA, PRINCIPIOATIVO) in cursor:
                             table_medicamento.append((IDMEDICAMENTO, NOMEPRODUTO, CLASSETERAPEUTICA, PRINCIPIOATIVO))
@@ -146,7 +144,7 @@ class App:
                         # Seleção dos datasets de venda para mesclar e gerar dataset base
                         periodos = (int(input("Quantos períodos gostaria de incluir na consulta? ")))
                         datasets = []
-                        for i in range(1, periodos+1):
+                        for i in range(1, periodos + 1):
                             mes = input(f"Qual o mês do período {i}? ")
                             ano = input(f"Qual o ano do período {i}? ")
                             periodo = f"{mes}-{ano}.csv"
@@ -162,8 +160,8 @@ class App:
                             cursor.execute('TRUNCATE TABLE venda;')
 
                             for dataset in datasets:
-                                df_venda = pd.read_csv(dataset, delimiter = ";", header = 0, names = ["ANOVENDA", "MESVENDA", "1", "2", "PRINCIPIOATIVO", "3", "QTDVENDIDA", "4", "5", "6", "7", "8", "9", "10", "11"], usecols = ['QTDVENDIDA', 'ANOVENDA', 'MESVENDA', 'PRINCIPIOATIVO'], quotechar = "'\"", quoting = (3), doublequote = False, encoding = 'utf-8', encoding_errors = 'ignore')
-                                df_venda.to_sql('venda', con = engine, if_exists = 'append')
+                                df_venda = pd.read_csv(dataset, delimiter=";", header=0, names=["ANOVENDA", "MESVENDA", "1", "2", "PRINCIPIOATIVO", "3", "QTDVENDIDA", "4", "5", "6", "7", "8", "9", "10", "11"], usecols=['QTDVENDIDA', 'ANOVENDA', 'MESVENDA', 'PRINCIPIOATIVO'], quotechar="'\"", quoting=3, doublequote=False, encoding='utf-8', encoding_errors='ignore')
+                                df_venda.to_sql('venda', con=engine, if_exists='append')
                         except pd.error() as e:
                             print(f'Erro: {e}')
                             sys.exit(1)
@@ -222,11 +220,9 @@ class App:
 
                             filtro = f"{tipo_filtro},{conteudo_filtro};"
 
-                            filtro_str = f"M.{tipo_filtro} LIKE '%{conteudo_filtro}%',"
+                            filtros.filtros(filtros_extra, tipo_filtro, conteudo_filtro)
 
-                            filtros_extra += filtro_str
-
-                            view_filtro_list.append(filtro)
+                            filtros.filtrolist(view_filtro_list, filtro, tipo_filtro, conteudo_filtro)
 
                             counter += 1
                         filtros_extra = filtros_extra.split(",")
@@ -236,30 +232,16 @@ class App:
                         conteudos_filtro = []
                         for filtro in view_filtro_list:
                             tipo_filtro, conteudo_filtro = filtro.split(",")
-                            tipos_filtro.append(tipo_filtro) # Mostra a lista de tipos de filtros preenchida com a lista criada no loop de filtro
-                            conteudos_filtro.append(conteudo_filtro) # Mostra a lista de conteudos de filtros preenchida com a lista criada no loop de filtro
+                            tipos_filtro.append(tipo_filtro)  # Mostra a lista de tipos de filtros preenchida com a lista criada no loop de filtro
+                            conteudos_filtro.append(conteudo_filtro)  # Mostra a lista de conteudos de filtros preenchida com a lista criada no loop de filtro
 
                         df_filtro = pd.Dataframe((zip(tipos_filtro, conteudos_filtro)), columns=['TIPO', 'CONTEUDO'])
                         # Enviando o dataframe de filtros para a tabela pertinente
-                        df_filtro.to_sql('filtro', con = engine, if_exists = 'append')
+                        df_filtro.to_sql('filtro', con=engine, if_exists='append')
 
                         order = input("Qual coluna gostaria de usar para ordenar a tabela?(NOME_PRODUTO, CLASSE_TERAPEUTICA, PRINCIPIO_ATIVO) ")
 
-                        def orderby(self, order, tipos_filtro):
-                            order_by = ""
-                            for tipo_filtro in tipos_filtro:
-                                if order == tipo_filtro:
-                                    order_by = order    # Mostra a coluna usada para o order by
-                            return order_by
-
-                        order_by = orderby(order, tipos_filtro)
-
-                        # Escolhendo a coluna do order by
-                        order = input("Qual coluna gostaria de usar para ordenar a tabela?(NOME_PRODUTO, CLASSE_TERAPEUTICA, PRINCIPIO_ATIVO) ")
-                        order_by = ""
-                        for tipo_filtro in tipos_filtro:
-                            if order == tipo_filtro:
-                                order_by = order    # Mostra a coluna usada para o order by
+                        order_by = filtros.orderby(order, tipos_filtro)
 
                         # Query da view filtrada
                         view_filtro_query = f"CREATE VIEW IF NOT EXISTS {view_nome} AS SELECT {colunas_filtradas} FROM medicamento M WHERE {filtros_extra} ORDER BY {order_by};"
@@ -275,9 +257,9 @@ class App:
                         for (IDCONSULTA, MESVENDA, ANOVENDA, SOMA, TIPOFILTRO, CONTEUDOFILTRO, NOMEDATASET) in cursor:
                             consulta.append((IDCONSULTA, MESVENDA, ANOVENDA, SOMA, TIPOFILTRO, CONTEUDOFILTRO, NOMEDATASET))
 
-                        df_consulta = pd.Dataframe(consulta, header = 0, columns=['IDCONSULTA', 'MESVENDA', 'ANOVENDA', 'SOMA', 'TIPOFILTRO', 'CONTEUDOFILTRO', 'NOMEDATASET'])
+                        df_consulta = pd.Dataframe(consulta, header=0, columns=['IDCONSULTA', 'MESVENDA', 'ANOVENDA', 'SOMA', 'TIPOFILTRO', 'CONTEUDOFILTRO', 'NOMEDATASET'])
 
-                        df_consulta.to_sql('consulta', con = engine, if_exists = 'append')
+                        df_consulta.to_sql('consulta', con=engine, if_exists='append')
 
                         cursor.execute("SELECT MES, ANO, SOMA, TIPOFILTRO, CONTEUDOFILTRO, DATASET FROM consulta WHERE IDCONSULTA = LAST_INSERT_ID();")
 
@@ -293,7 +275,7 @@ class App:
                             if old_consulta.lower() == "s":
                                 # Conexão com o banco de dados no mariadb
                                 user = input("Digite seu usuário: ")
-                                pw = pw.pwinput(prompt = 'Digite sua senha: ')
+                                pw = pw.pwinput(prompt='Digite sua senha: ')
 
                                 port_quest = input("Gostaria de usar port padrão?(s/n) ")
 
@@ -303,7 +285,6 @@ class App:
                                     port = (int(input("Digite o port de sua escolha: ")))
 
                                 db = input("Digite o nome da sua database: ")
-
 
                                 conn = mariadb.connect(user=user, password=pw, port=port, database=db)
 
@@ -333,7 +314,6 @@ class App:
                                     else:
                                         print('Resposta inválida.')
                                         restart = True
-
 
                                 cursor.execute(consulta_query)
 
