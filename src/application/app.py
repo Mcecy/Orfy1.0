@@ -1,4 +1,5 @@
 import os
+from numpy import int64
 import pwinput as pw
 from sqlalchemy import create_engine
 import pandas as pd
@@ -74,10 +75,7 @@ class App:
 
     df_venda['CODIGO'] = pd.to_numeric(df_venda['CODIGO'])
 
-    try:
-        df_venda['CODIGO'] = pd.astype(pd.Int64Dtype)
-    except:
-        print("Impossível converter.")
+    df_venda['CODIGO'] = df_venda['CODIGO'].values.astype(int64)
 
     df_venda['DATAVENDA'] = pd.to_datetime(df_venda['DATAVENDA'])
     df_venda['VOLUMEVENDIDO'] = pd.to_numeric(df_venda['VOLUMEVENDIDO'])
@@ -86,28 +84,24 @@ class App:
 
     print("Códigos, datas e volumes transformados.")
 
-    
-
     for i in df_venda.index:
         for ind in df_bebida.index:
             if df_venda.at[i, 'CODIGO'] == df_bebida.at[ind, 'CODIGO']:
-                df_venda.at[i, 'ID_BEBIDA'] = df_bebida.at[ind, 'IDBEBIDA']
+                df_venda.at[i, 'ID_BEBIDA'] = ind
 
-    print("Aguarde alguns instantes. Se essa for a primeira vez rodando OrFy nesse DB, o sistema terminará o insert em aproximadamente 17min.")
+    df_venda.dropna(inplace=True)
+
+    df_venda['ID_BEBIDA'] = df_venda['ID_BEBIDA'].astype(int64)
+
+    print("Aguarde alguns instantes.")
     '''
      # Seleção dos datasets de venda para mesclar no file_venda
-    periodos = (int(input("Quantos períodos gostaria de incluir na consulta? ")))
-    datasets = []
+    periodos = []
     for i in range(1, 3):
         mes = input(f"Qual o mês do período {i}? ")
         ano = input(f"Qual o ano do período {i}? ")
         periodo = f"{mes}/{ano}"
-        pasta = "src/entities/datasets"
-        for diretorio, subpastas, arquivos in os.walk(pasta):
-            for arquivo in arquivos:
-                if arquivo.endswith(periodo):
-                    datasets.append(arquivo)
-    for periodo in datasets:
+    for periodo in periodos:
         periodo = 'src/entities/dataset/' + periodo
 
     try:
@@ -115,12 +109,6 @@ class App:
 
         # Criando um dataframe baseado no dataset de vendas
         df_venda = pd.read_csv(df_dataset, usecols = ['NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'], delimiter = ";", quotechar = "'", quoting = (3), doublequote = False, encoding = 'utf-8', encoding_errors = 'ignore')
-
-    cursor.execute("DELETE FROM venda WHERE CODIGO IS NULL OR CODIGO = '';")
-    print("Valores nulos apagados.")
-
-    cursor.execute("UPDATE venda V INNER JOIN bebida B ON V.CODIGO = B.CODIGO SET V.ID_BEBIDA = B.IDBEBIDA WHERE V.CODIGO = B.CODIGO AND V.CODIGO IS NOT NULL AND B.CODIGO IS NOT NULL;")
-    print("Update executado.")
     '''
     try:
         df_venda.to_sql('venda', con=engine, index=True, index_label='IDVENDA', if_exists='fail', method='multi')
@@ -129,3 +117,5 @@ class App:
 
     except ValueError:
         print("Tabela 'venda' já existe.")
+
+
