@@ -2,8 +2,7 @@ import os
 import pwinput as pw
 from sqlalchemy import create_engine
 import pandas as pd
-import pyodbc
-from parsedates import lookup
+import mariadb
 
 
 class App:
@@ -26,7 +25,7 @@ class App:
 
     db = input("Digite o nome da sua database: ")
 
-    conn = pyodbc.connect(driver='{MariaDB ODBC 3.1 Driver}', server='localhost', database=db, user=user, password=pw, port=3306)
+    conn = mariadb.connect(user=user, password=pw, port=3306, database=db)
     cursor = conn.cursor()
     cursor.fast_executemany = True
 
@@ -74,30 +73,54 @@ class App:
             df_venda[f'{col}'] = df_venda[f'{col}'].replace('"', '', regex=True)
 
     df_venda['CODIGO'] = pd.to_numeric(df_venda['CODIGO'])
+
+    try:
+        df_venda['CODIGO'] = pd.astype(pd.Int64Dtype)
+    except:
+        print("Impossível converter.")
+
     df_venda['DATAVENDA'] = pd.to_datetime(df_venda['DATAVENDA'])
     df_venda['VOLUMEVENDIDO'] = pd.to_numeric(df_venda['VOLUMEVENDIDO'])
 
     df_venda['ID_BEBIDA'] = pd.NA
 
-    print("Códigos transformados.")
+    print("Códigos, datas e volumes transformados.")
+
+    
+
+    for i in df_venda.index:
+        for ind in df_bebida.index:
+            if df_venda.at[i, 'CODIGO'] == df_bebida.at[ind, 'CODIGO']:
+                df_venda.at[i, 'ID_BEBIDA'] = df_bebida.at[ind, 'IDBEBIDA']
 
     print("Aguarde alguns instantes. Se essa for a primeira vez rodando OrFy nesse DB, o sistema terminará o insert em aproximadamente 17min.")
     '''
-    for i, col in enumerate(df_venda.columns):
-        if col == 'CODIGOBEBIDA':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace(r'[^\d]', '', regex=True))
-        if col == 'VOLUMEVENDIDO':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace(r'[^\d.]', '', regex=True))
-        if col == 'DATAVENDA' or col == 'NOMEPRODUTO':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace('"', '', regex=True))
+     # Seleção dos datasets de venda para mesclar no file_venda
+    periodos = (int(input("Quantos períodos gostaria de incluir na consulta? ")))
+    datasets = []
+    for i in range(1, 3):
+        mes = input(f"Qual o mês do período {i}? ")
+        ano = input(f"Qual o ano do período {i}? ")
+        periodo = f"{mes}/{ano}"
+        pasta = "src/entities/datasets"
+        for diretorio, subpastas, arquivos in os.walk(pasta):
+            for arquivo in arquivos:
+                if arquivo.endswith(periodo):
+                    datasets.append(arquivo)
+    for periodo in datasets:
+        periodo = 'src/entities/dataset/' + periodo
 
-    for i, col in enumerate(df_venda.columns):
-        if col == 'CODIGOBEBIDA':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace(r'[^\d]', '', regex=True))
-        if col == 'VOLUMEVENDIDO':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace(r'[^\d.]', '', regex=True))
-        if col == 'DATAVENDA' or col == 'NOMEPRODUTO':
-            df_venda[f'{col}'] = (df_venda[f'{col}'].str.replace('"', '', regex=True))
+    try:
+        df_dataset = pd.concat(map(pd.read_csv, datasets), ignore_index=True, axis= {'NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'})
+
+        # Criando um dataframe baseado no dataset de vendas
+        df_venda = pd.read_csv(df_dataset, usecols = ['NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'], delimiter = ";", quotechar = "'", quoting = (3), doublequote = False, encoding = 'utf-8', encoding_errors = 'ignore')
+
+    cursor.execute("DELETE FROM venda WHERE CODIGO IS NULL OR CODIGO = '';")
+    print("Valores nulos apagados.")
+
+    cursor.execute("UPDATE venda V INNER JOIN bebida B ON V.CODIGO = B.CODIGO SET V.ID_BEBIDA = B.IDBEBIDA WHERE V.CODIGO = B.CODIGO AND V.CODIGO IS NOT NULL AND B.CODIGO IS NOT NULL;")
+    print("Update executado.")
     '''
     try:
         df_venda.to_sql('venda', con=engine, index=True, index_label='IDVENDA', if_exists='fail', method='multi')
@@ -106,5 +129,3 @@ class App:
 
     except ValueError:
         print("Tabela 'venda' já existe.")
-
-
