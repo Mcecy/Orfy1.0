@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 import mariadb
 
+import filtros
+
 
 class App:
 
@@ -95,17 +97,23 @@ class App:
 
     print("Aguarde alguns instantes.")
     '''
-     # Seleção dos datasets de venda para mesclar no file_venda
-    periodos = []
-    for i in range(1, 3):
-        mes = input(f"Qual o mês do período {i}? ")
-        ano = input(f"Qual o ano do período {i}? ")
-        periodo = f"{mes}/{ano}"
-    for periodo in periodos:
-        periodo = 'src/entities/dataset/' + periodo
+    # Seleção dos periodos de venda para filtrar
+    mesinicial = 0
+    anoinicial = 0
+    mesfinal = 0
+    anofinal = 0
+    for i in range(0, 2):
+        if i == 0:
+            mesinicial = int(input("Qual o número do mês inicial? "))
+            anoinicial = int(input("Qual o número do ano inicial? "))
+        if i == 1:
+            mesfinal = int(input("Qual o número do mês final?"))
+            anofinal = int(input("Qual o número do ano final?"))
+
+    df_periodo = df_venda[(df_venda['DATAVENDA'].dt.month >= mesinicial) & (df_venda['DATAVENDA'].dt.year >= anoinicial) & (df_venda['DATAVENDA'].dt.month <= mesfinal) & (df_venda['DATAVENDA'].dt.year <= anofinal)]
 
     try:
-        df_dataset = pd.concat(map(pd.read_csv, datasets), ignore_index=True, axis= {'NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'})
+
 
         # Criando um dataframe baseado no dataset de vendas
         df_venda = pd.read_csv(df_dataset, usecols = ['NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'], delimiter = ";", quotechar = "'", quoting = (3), doublequote = False, encoding = 'utf-8', encoding_errors = 'ignore')
@@ -118,4 +126,24 @@ class App:
     except ValueError:
         print("Tabela 'venda' já existe.")
 
+    # Seleção dos periodos de venda para filtrar
+    mesinicial = int(input("Qual o número do mês inicial? "))
+    anoinicial = int(input("Qual o número do ano inicial? "))
+    mesfinal = int(input("Qual o número do mês final?"))
+    anofinal = int(input("Qual o número do ano final?"))
 
+    df_periodo = df_venda[(df_venda['DATAVENDA'].dt.month >= mesinicial) & (df_venda['DATAVENDA'].dt.year >= anoinicial) & (df_venda['DATAVENDA'].dt.month <= mesfinal) & (df_venda['DATAVENDA'].dt.year <= anofinal)]
+
+    qtd_filtros = int(input("Qual a quantidade de filtros?"))
+    filtros = filtros.filtros(qtd_filtros)
+    tipos_filtro, conteudos_filtro = filtros.filtros_list(filtros)
+
+    filters = []
+    for tipo in tipos_filtro:
+        for conteudo in conteudos_filtro:
+            for value in df_periodo[f'{tipo}'].values:
+                if tipo in df_periodo.columns and conteudo in value:
+                    filter = (df_periodo[f'{tipo}'] == conteudo)
+                    filters.append(filter)
+    #df_periodo[(df_periodo[f'{tipo}'] == conteudo)]
+    df_filtro = 

@@ -1,22 +1,16 @@
 def filtros(qtd_filtros):
-    filtros_extra = ""
     filtro_list = []
 
     for i in range(1, qtd_filtros + 1):
 
-        tipo_filtro = input(f"Qual o tipo do filtro {i}?(NOMEPRODUTO/CLASSETERAPEUTICA/PRINCIPIOATIVO) ")
-
+        tipo_filtro = input(f"Qual o tipo do filtro {i}?(CATEGORIA/NOMEPRODUTO) ")
         conteudo_filtro = input(f"Qual o conteúdo do filtro {i}? ")
 
         filtro = f"{tipo_filtro},{conteudo_filtro};"
 
-        filtro_str = f"M.{tipo_filtro} LIKE '%{conteudo_filtro}%',"
-
-        filtros_extra += filtro_str
-
         filtro_list.append(filtro)
 
-    return filtros_extra, filtro_list
+    return filtro_list
 
 
 def filtros_list(filtro_list):
