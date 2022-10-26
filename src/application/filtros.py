@@ -1,22 +1,22 @@
 def filtros(qtd_filtros):
-    filtro_list = []
+    filtro_lista = []
 
     for i in range(1, qtd_filtros + 1):
 
         tipo_filtro = input(f"Qual o tipo do filtro {i}?(CATEGORIA/NOMEPRODUTO) ")
         conteudo_filtro = input(f"Qual o conteúdo do filtro {i}? ")
 
-        filtro = f"{tipo_filtro},{conteudo_filtro};"
+        filtro = f"{tipo_filtro},{conteudo_filtro}"
 
-        filtro_list.append(filtro)
+        filtro_lista.append(filtro)
 
-    return filtro_list
+    return filtro_lista
 
 
-def filtros_list(filtro_list):
+def filtros_lista(lista):
     tipos_filtro = []
     conteudos_filtro = []
-    for filtro in filtro_list:
+    for filtro in lista:
         tipo_filtro, conteudo_filtro = filtro.split(",")
         tipos_filtro.append(tipo_filtro)
         conteudos_filtro.append(conteudo_filtro)

@@ -126,24 +126,28 @@ class App:
     except ValueError:
         print("Tabela 'venda' já existe.")
 
+    df_join = df_venda.join(df_bebida, on='ID_BEBIDA', how='inner', lsuffix='_VENDA', rsuffix='_BEBIDA')
+
     # Seleção dos periodos de venda para filtrar
-    mesinicial = int(input("Qual o número do mês inicial? "))
     anoinicial = int(input("Qual o número do ano inicial? "))
-    mesfinal = int(input("Qual o número do mês final?"))
     anofinal = int(input("Qual o número do ano final?"))
 
-    df_periodo = df_venda[(df_venda['DATAVENDA'].dt.month >= mesinicial) & (df_venda['DATAVENDA'].dt.year >= anoinicial) & (df_venda['DATAVENDA'].dt.month <= mesfinal) & (df_venda['DATAVENDA'].dt.year <= anofinal)]
+    df_join = df_join[(df_join['DATAVENDA'].dt.year >= anoinicial) & (df_join['DATAVENDA'].dt.year <= anofinal)]
+    print(df_join)
 
     qtd_filtros = int(input("Qual a quantidade de filtros?"))
-    filtros = filtros.filtros(qtd_filtros)
-    tipos_filtro, conteudos_filtro = filtros.filtros_list(filtros)
+    filters = filtros.filtros(qtd_filtros)
+    tipos_filtro, conteudos_filtro = filtros.filtros_lista(filters)
 
-    filters = []
+    dfs = []
     for tipo in tipos_filtro:
         for conteudo in conteudos_filtro:
-            for value in df_periodo[f'{tipo}'].values:
-                if tipo in df_periodo.columns and conteudo in value:
-                    filter = (df_periodo[f'{tipo}'] == conteudo)
-                    filters.append(filter)
-    #df_periodo[(df_periodo[f'{tipo}'] == conteudo)]
-    df_filtro = 
+            for value in df_join[f'{tipo}'].values:
+                if tipo in df_join.columns and conteudo in value:
+                    df = df_join[(df_join[f'{tipo}'] == conteudo)]
+                    dfs.append(df)
+
+    df_filtro = pd.concat(dfs)
+
+    pd.set_option('display.max_rows', 20)
+    print(df_filtro)
