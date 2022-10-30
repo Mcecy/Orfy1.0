@@ -5,8 +5,6 @@ from sqlalchemy import create_engine
 import pandas as pd
 import mariadb
 
-import filtros
-
 
 class App:
 
@@ -37,10 +35,8 @@ class App:
 
     con = engine.connect()
 
-    venda_file1 = 'src\\entities\\datasets\\vendas_bebida.csv'
     venda_file2 = 'src\\entities\\datasets\\venda_teste.csv'
     bebida_file1 = 'src\\entities\\datasets\\bebidas.csv'
-    bebida_file2 = 'src\\entities\\datasets\\beverages.csv'
 
     # Criando o dataframe de bebidas e mandando para o banco
     df_bebida = pd.read_csv(bebida_file1, delimiter=',', header=0, names=['CODIGO', 'CATEGORIA', 'NOME', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'], usecols=['NOME', 'CATEGORIA', 'CODIGO'], quoting=3, encoding='utf-8', encoding_errors='ignore')
@@ -60,12 +56,6 @@ class App:
     df_venda = pd.read_csv(venda_file2, delimiter=',', header=0, names=["1", "DATAVENDA", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "CODIGO", "PRODUTO", "17", "18", "19", "20", "21", "22", "VOLUMEVENDIDO", "24"], usecols=['DATAVENDA', 'CODIGO', 'PRODUTO', 'VOLUMEVENDIDO'], quoting=3, encoding='utf-8', encoding_errors='ignore')
 
     print("Dataframe de venda criado.")
-
-    # df_venda['DATAVENDA'] = lookup(df_venda['DATAVENDA'], format='%m/%d/%Y')
-
-    # print("Datas transformadas.")
-
-    # pd.to_numeric(df_venda['CODIGO'], errors='coerce').dropna(inplace=True)
 
     for i, col in enumerate(df_venda.columns):
         if col == 'CODIGO':
@@ -96,28 +86,7 @@ class App:
     df_venda['ID_BEBIDA'] = df_venda['ID_BEBIDA'].astype(int64)
 
     print("Aguarde alguns instantes.")
-    '''
-    # Seleção dos periodos de venda para filtrar
-    mesinicial = 0
-    anoinicial = 0
-    mesfinal = 0
-    anofinal = 0
-    for i in range(0, 2):
-        if i == 0:
-            mesinicial = int(input("Qual o número do mês inicial? "))
-            anoinicial = int(input("Qual o número do ano inicial? "))
-        if i == 1:
-            mesfinal = int(input("Qual o número do mês final?"))
-            anofinal = int(input("Qual o número do ano final?"))
 
-    df_periodo = df_venda[(df_venda['DATAVENDA'].dt.month >= mesinicial) & (df_venda['DATAVENDA'].dt.year >= anoinicial) & (df_venda['DATAVENDA'].dt.month <= mesfinal) & (df_venda['DATAVENDA'].dt.year <= anofinal)]
-
-    try:
-
-
-        # Criando um dataframe baseado no dataset de vendas
-        df_venda = pd.read_csv(df_dataset, usecols = ['NOME_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'], delimiter = ";", quotechar = "'", quoting = (3), doublequote = False, encoding = 'utf-8', encoding_errors = 'ignore')
-    '''
     try:
         df_venda.to_sql('venda', con=engine, index=True, index_label='IDVENDA', if_exists='fail', method='multi')
 
@@ -126,28 +95,40 @@ class App:
     except ValueError:
         print("Tabela 'venda' já existe.")
 
+    usuario = [user]
+
+    # Fazer csv dos dados para criar dataframes
+
+    df_filtro = pd.DataFrame(columns=['TIPO', 'CONTEUDO', 'ID_CONSULTA'])
+    df_periodo = pd.DataFrame(columns=['ANOINICIAL', 'ANOFINAL', 'ID_CONSULTA'])
+    df_consulta = pd.DataFrame(columns=['ID_USUARIO', 'SOMA'])
+    df_usuario = pd.Dataframe(user, columns=['LOGIN'])
+
     df_join = df_venda.join(df_bebida, on='ID_BEBIDA', how='inner', lsuffix='_VENDA', rsuffix='_BEBIDA')
 
     # Seleção dos periodos de venda para filtrar
     anoinicial = int(input("Qual o número do ano inicial? "))
     anofinal = int(input("Qual o número do ano final?"))
 
+    periodo = [anoinicial, anofinal, 0]
+
+    df_periodo.append(periodo)
+
     df_join = df_join[(df_join['DATAVENDA'].dt.year >= anoinicial) & (df_join['DATAVENDA'].dt.year <= anofinal)]
     print(df_join)
 
-    qtd_filtros = int(input("Qual a quantidade de filtros?"))
-    filters = filtros.filtros(qtd_filtros)
-    tipos_filtro, conteudos_filtro = filtros.filtros_lista(filters)
+    tipo = input("Qual o tipo do filtro?(CATEGORIA/PRODUTO) ")
+    conteudo = input("Qual o conteúdo do filtro? ")
+    filtro = [tipo, conteudo, 0]
 
-    dfs = []
-    for tipo in tipos_filtro:
-        for conteudo in conteudos_filtro:
-            for value in df_join[f'{tipo}'].values:
-                if tipo in df_join.columns and conteudo in value:
-                    df = df_join[(df_join[f'{tipo}'] == conteudo)]
-                    dfs.append(df)
+    df_filtro.append(filtro)
 
-    df_filtro = pd.concat(dfs)
+    df = df_join[(df_join[f'{tipo}'] == conteudo)]
+
+    soma = df.sum(axis='VOLUMEVENDIDO')
+    df_consulta.append(0, soma)
+
+    print(df_usuario)
 
     pd.set_option('display.max_rows', 20)
     print(df_filtro)
